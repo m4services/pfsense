@@ -1,7 +1,10 @@
 #!/bin/sh
 
-# Ativa o modo de depuração para exibir todos os comandos executados
-set -x
+# Definindo o caminho do arquivo de configuração do Zabbix Agent
+ZABBIX_CONF="/usr/local/etc/zabbix_agentd.conf"
+if [ ! -f "$ZABBIX_CONF" ]; then
+    ZABBIX_CONF="/usr/local/etc/zabbix/zabbix_agentd.conf"
+fi
 
 # Baixa o arquivo pfsense_zbx.php para o diretório /root/scripts
 echo "Baixando o arquivo pfsense_zbx.php..."
@@ -9,18 +12,18 @@ curl --create-dirs -o /root/scripts/pfsense_zbx.php https://raw.githubuserconten
 
 # Remove qualquer configuração duplicada das opções avançadas do Zabbix Agent
 echo "Removendo configurações duplicadas do Zabbix Agent..."
-sed -i '' '/AllowRoot=1/d' /usr/local/etc/zabbix_agentd.conf
-sed -i '' '/UserParameter=pfsense.states.max/d' /usr/local/etc/zabbix_agentd.conf
-sed -i '' '/UserParameter=pfsense.states.current/d' /usr/local/etc/zabbix_agentd.conf
-sed -i '' '/UserParameter=pfsense.mbuf.current/d' /usr/local/etc/zabbix_agentd.conf
-sed -i '' '/UserParameter=pfsense.mbuf.cache/d' /usr/local/etc/zabbix_agentd.conf
-sed -i '' '/UserParameter=pfsense.mbuf.max/d' /usr/local/etc/zabbix_agentd.conf
-sed -i '' '/UserParameter=pfsense.discovery/d' /usr/local/etc/zabbix_agentd.conf
-sed -i '' '/UserParameter=pfsense.value/d' /usr/local/etc/zabbix_agentd.conf
+sed -i '' '/AllowRoot=1/d' "$ZABBIX_CONF"
+sed -i '' '/UserParameter=pfsense.states.max/d' "$ZABBIX_CONF"
+sed -i '' '/UserParameter=pfsense.states.current/d' "$ZABBIX_CONF"
+sed -i '' '/UserParameter=pfsense.mbuf.current/d' "$ZABBIX_CONF"
+sed -i '' '/UserParameter=pfsense.mbuf.cache/d' "$ZABBIX_CONF"
+sed -i '' '/UserParameter=pfsense.mbuf.max/d' "$ZABBIX_CONF"
+sed -i '' '/UserParameter=pfsense.discovery/d' "$ZABBIX_CONF"
+sed -i '' '/UserParameter=pfsense.value/d' "$ZABBIX_CONF"
 
 # Adiciona as novas configurações ao Zabbix Agent
 echo "Configurando Zabbix Agent..."
-cat <<EOF >> /usr/local/etc/zabbix_agentd.conf
+cat <<EOF >> "$ZABBIX_CONF"
 AllowRoot=1
 UserParameter=pfsense.states.max,grep "limit states" /tmp/rules.limits | cut -f4 -d ' '
 UserParameter=pfsense.states.current,grep "current entries" /tmp/pfctl_si_out | tr -s ' ' | cut -f4 -d ' '
@@ -37,7 +40,7 @@ echo 'zabbix_agentd_enable="YES"' >> /etc/rc.conf
 
 # Aumenta o valor do timeout para 5 no arquivo de configuração do Zabbix
 echo "Aumentando o Timeout para 5..."
-sed -i '' 's/^# Timeout=3/Timeout=5/' /usr/local/etc/zabbix_agentd.conf
+sed -i '' 's/^# Timeout=3/Timeout=5/' "$ZABBIX_CONF"
 
 # Reinicia o serviço do Zabbix Agent com 'onerestart'
 echo "Reiniciando o Zabbix Agent..."
@@ -61,6 +64,3 @@ echo "Configurando o cronjob do Speedtest..."
 /usr/local/bin/php /root/scripts/pfsense_zbx.php speedtest_cron
 
 echo "Script finalizado com sucesso!"
-
-# Desativa o modo de depuração
-set +x
