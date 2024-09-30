@@ -26,9 +26,9 @@ if ! grep -q 'zabbix_agentd_enable="YES"' /etc/rc.conf; then
     echo 'zabbix_agentd_enable="YES"' >> /etc/rc.conf
 fi
 
-# Aumenta o valor do timeout para 5 no arquivo de configuração do Zabbix
-echo "Aumentando o Timeout para 5..."
-sed -i '' 's/^# Timeout=3/Timeout=5/' "$ZABBIX_CONF"
+# Aumenta o valor do timeout para 30 no arquivo de configuração do Zabbix
+echo "Aumentando o Timeout para 30..."
+sed -i '' 's/^# Timeout=3/Timeout=30/' "$ZABBIX_CONF"
 
 # Reinicia o serviço do Zabbix Agent com 'onerestart'
 echo "Reiniciando o Zabbix Agent..."
