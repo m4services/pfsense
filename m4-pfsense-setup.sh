@@ -8,10 +8,10 @@ curl --create-dirs -o /root/scripts/pfsense_zbx.php https://raw.githubuserconten
 echo "Removendo parâmetros de usuário existentes..."
 sed -i '' '/^UserParameter=/d' /usr/local/etc/zabbix6/zabbix_agentd.conf
 
-# Edita o Timeout para 30
+# Edita o Timeout para 30 e garante que ele esteja acima de BufferSend
 echo "Configurando o Timeout para 30..."
 sed -i '' '/^Timeout=/d' /usr/local/etc/zabbix6/zabbix_agentd.conf
-sed -i '' '/^StartAgents=/i\
+sed -i '' '/^BufferSend=/i\
 Timeout=30\
 ' /usr/local/etc/zabbix6/zabbix_agentd.conf
 
