@@ -9,7 +9,7 @@ curl --create-dirs -o /root/scripts/pfsense_zbx.php https://raw.githubuserconten
 
 # Remove parâmetros UserParameter existentes
 echo "Removendo parâmetros UserParameter existentes..."
-sed -i '' '/^UserParameter/d' "$ZABBIX_CONF"
+grep -v '^UserParameter' "$ZABBIX_CONF" > /tmp/zabbix_agentd.conf && mv /tmp/zabbix_agentd.conf "$ZABBIX_CONF"
 
 # Adiciona as configurações dos User Parameters no final do arquivo de configuração do Zabbix
 echo "Configurando Zabbix Agent..."
@@ -32,25 +32,12 @@ if ! grep -q 'zabbix_agentd_enable="YES"' /etc/rc.conf; then
     echo 'zabbix_agentd_enable="YES"' >> /etc/rc.conf
 fi
 
-# Aumenta o valor do timeout para 30 no arquivo de configuração do Zabbix
-echo "Aumentando o Timeout para 30..."
-sed -i '' 's/^# Timeout=3/Timeout=30/' "$ZABBIX_CONF"
+# Aumenta o valor do timeout para 5 no arquivo de configuração do Zabbix
+echo "Aumentando o Timeout para 5..."
+sed -i '' 's/^# Timeout=3/Timeout=5/' "$ZABBIX_CONF"
 
 # Reinicia o serviço do Zabbix Agent com 'onerestart'
 echo "Reiniciando o Zabbix Agent..."
 service zabbix_agentd onerestart
-
-# Instala o Speedtest CLI e configura o cronjob para o sysversion
-echo "Instalando Speedtest e configurando cronjob..."
-pkg update && pkg install -y py311-speedtest-cli-2.1.3
-/usr/local/bin/php /root/scripts/pfsense_zbx.php sysversion_cron
-
-# Corrige a instalação do speedtest caso necessário
-echo "Corrigindo a instalação do Speedtest (se necessário)..."
-curl -Lo /usr/local/lib/python3.11/site-packages/speedtest.py https://raw.githubusercontent.com/sivel/speedtest-cli/master/speedtest.py
-
-# Configura o cronjob para rodar o speedtest regularmente
-echo "Configurando o cronjob do Speedtest..."
-/usr/local/bin/php /root/scripts/pfsense_zbx.php speedtest_cron
 
 echo "Script finalizado com sucesso!"
