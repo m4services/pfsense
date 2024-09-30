@@ -29,4 +29,8 @@ sed -i '' 's/^# Timeout=3/Timeout=5/' /usr/local/etc/zabbix6/zabbix_agentd.conf
 echo "Reiniciando o Zabbix Agent..."
 service zabbix_agentd restart
 
+# Verifica o status do Zabbix Agent
+echo "Verificando o status do Zabbix Agent..."
+service zabbix_agentd status
+
 echo "Configuração do Zabbix Agent concluída!"
