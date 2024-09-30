@@ -21,8 +21,8 @@ sed -i '' '/UserParameter=pfsense.mbuf.max/d' "$ZABBIX_CONF"
 sed -i '' '/UserParameter=pfsense.discovery/d' "$ZABBIX_CONF"
 sed -i '' '/UserParameter=pfsense.value/d' "$ZABBIX_CONF"
 
-# Adiciona as novas configurações ao Zabbix Agent
-echo "Configurando Zabbix Agent..."
+# Adiciona as novas configurações ao Zabbix Agent, sobrescrevendo as existentes
+echo "Adicionando as novas configurações do Zabbix Agent..."
 cat <<EOF >> "$ZABBIX_CONF"
 AllowRoot=1
 UserParameter=pfsense.states.max,grep "limit states" /tmp/rules.limits | cut -f4 -d ' '
@@ -36,7 +36,9 @@ EOF
 
 # Habilita o Zabbix Agent no /etc/rc.conf
 echo "Habilitando Zabbix Agent no /etc/rc.conf..."
-echo 'zabbix_agentd_enable="YES"' >> /etc/rc.conf
+if ! grep -q 'zabbix_agentd_enable="YES"' /etc/rc.conf; then
+    echo 'zabbix_agentd_enable="YES"' >> /etc/rc.conf
+fi
 
 # Aumenta o valor do timeout para 5 no arquivo de configuração do Zabbix
 echo "Aumentando o Timeout para 5..."
