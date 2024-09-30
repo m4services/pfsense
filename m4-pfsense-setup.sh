@@ -21,9 +21,13 @@ UserParameter=pfsense.discovery[*],/usr/local/bin/php /root/scripts/pfsense_zbx.
 UserParameter=pfsense.value[*],/usr/local/bin/php /root/scripts/pfsense_zbx.php \$1 \$2 \$3
 EOF
 
-# Aumenta o valor do timeout para 5
+# Aumenta o valor do timeout para 5, criando a linha se ela não existir
 echo "Aumentando o Timeout para 5..."
-sed -i '' 's/^# Timeout=3/Timeout=5/' /usr/local/etc/zabbix6/zabbix_agentd.conf
+if ! grep -q '^Timeout=' /usr/local/etc/zabbix6/zabbix_agentd.conf; then
+    echo 'Timeout=5' >> /usr/local/etc/zabbix6/zabbix_agentd.conf
+else
+    sed -i '' 's/^Timeout=.*/Timeout=5/' /usr/local/etc/zabbix6/zabbix_agentd.conf
+fi
 
 # Reinicia o serviço do Zabbix Agent para aplicar as mudanças
 echo "Reiniciando o Zabbix Agent..."
