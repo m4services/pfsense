@@ -11,6 +11,7 @@ sed -i '' '/^UserParameter=/d' /usr/local/etc/zabbix6/zabbix_agentd.conf
 # Configura os parâmetros de usuário para o Zabbix Agent
 echo "Configurando Zabbix Agent..."
 cat <<EOF >> /usr/local/etc/zabbix6/zabbix_agentd.conf
+AllowRoot=1
 UserParameter=pfsense.states.max,grep "limit states" /tmp/rules.limits | cut -f4 -d ' '
 UserParameter=pfsense.states.current,grep "current entries" /tmp/pfctl_si_out | tr -s ' ' | cut -f4 -d ' '
 UserParameter=pfsense.mbuf.current,netstat -m | grep "mbuf clusters" | cut -f1 -d ' ' | cut -d '/' -f1
@@ -20,9 +21,9 @@ UserParameter=pfsense.discovery[*],/usr/local/bin/php /root/scripts/pfsense_zbx.
 UserParameter=pfsense.value[*],/usr/local/bin/php /root/scripts/pfsense_zbx.php \$1 \$2 \$3
 EOF
 
-# Aumenta o valor do timeout para 3
-echo "Aumentando o Timeout para 30..."
-sed -i '' 's/^# Timeout=3/Timeout=30/' /usr/local/etc/zabbix6/zabbix_agentd.conf
+# Aumenta o valor do timeout para 5
+echo "Aumentando o Timeout para 5..."
+sed -i '' 's/^# Timeout=3/Timeout=5/' /usr/local/etc/zabbix6/zabbix_agentd.conf
 
 # Reinicia o serviço do Zabbix Agent para aplicar as mudanças
 echo "Reiniciando o Zabbix Agent..."
