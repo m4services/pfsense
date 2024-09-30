@@ -8,7 +8,7 @@ curl --create-dirs -o /root/scripts/pfsense_zbx.php https://raw.githubuserconten
 echo "Removendo parâmetros de usuário existentes..."
 sed -i '' '/^UserParameter=/d' /usr/local/etc/zabbix6/zabbix_agentd.conf
 
-# Edita o Timeout para 30 e garante que ele esteja acima de BufferSend
+# Edita o Timeout para 30
 echo "Configurando o Timeout para 30..."
 sed -i '' '/^Timeout=/d' /usr/local/etc/zabbix6/zabbix_agentd.conf
 sed -i '' '/^BufferSend=/i\
@@ -20,6 +20,7 @@ echo "Configurando Zabbix Agent..."
 {
   echo
   echo "AllowRoot=1"
+  echo
   echo "UserParameter=pfsense.states.max,grep \"limit states\" /tmp/rules.limits | cut -f4 -d ' '"
   echo "UserParameter=pfsense.states.current,grep \"current entries\" /tmp/pfctl_si_out | tr -s ' ' | cut -f4 -d ' '"
   echo "UserParameter=pfsense.mbuf.current,netstat -m | grep \"mbuf clusters\" | cut -f1 -d ' ' | cut -d '/' -f1"
