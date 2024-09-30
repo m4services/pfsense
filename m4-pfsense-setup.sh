@@ -1,57 +1,60 @@
 #!/bin/sh
 
-# Baixa o arquivo pfsense_zbx.php para o diretório /root/scripts
-echo "Baixando o arquivo pfsense_zbx.php..."
+# Script para configurar pfSense para Zabbix e Speedtest
+
+# 1. Copiar o arquivo pfsense_zbx.php
+echo "Copiando o arquivo pfsense_zbx.php..."
 curl --create-dirs -o /root/scripts/pfsense_zbx.php https://raw.githubusercontent.com/rbicelli/pfsense-zabbix-template/master/pfsense_zbx.php
 
-# Define o arquivo de configuração
-CONF_FILE="/usr/local/etc/zabbix6/zabbix_agentd.conf"
+# 2. Instalar o pacote Zabbix Agent
+echo "Instalando o Zabbix Agent..."
+pkg update
+pkg install -y zabbix-agent6  # ou zabbix-agent5, dependendo do que você preferir
 
-# Cria um backup do arquivo de configuração
-cp $CONF_FILE ${CONF_FILE}.bak
+# 3. Adicionar User Parameters ao Zabbix Agent
+echo "Adicionando User Parameters ao Zabbix Agent..."
+cat << EOF >> /usr/local/etc/zabbix6/zabbix_agentd.conf
+AllowRoot=1
+UserParameter=pfsense.states.max,grep "limit states" /tmp/rules.limits | cut -f4 -d ' '
+UserParameter=pfsense.states.current,grep "current entries" /tmp/pfctl_si_out | tr -s ' ' | cut -f4 -d ' '
+UserParameter=pfsense.mbuf.current,netstat -m | grep "mbuf clusters" | cut -f1 -d ' ' | cut -d '/' -f1
+UserParameter=pfsense.mbuf.cache,netstat -m | grep "mbuf clusters" | cut -f1 -d ' ' | cut -d '/' -f2
+UserParameter=pfsense.mbuf.max,netstat -m | grep "mbuf clusters" | cut -f1 -d ' ' | cut -d '/' -f4
+UserParameter=pfsense.discovery[*],/usr/local/bin/php /root/scripts/pfsense_zbx.php discovery \$1
+UserParameter=pfsense.value[*],/usr/local/bin/php /root/scripts/pfsense_zbx.php \$1 \$2 \$3
+EOF
 
-# Edita o arquivo de configuração
-awk -v ORS= -v timeout=30 '
-{
-    if ($0 ~ /^Timeout=/) {
-        print "Timeout=" timeout "\n"
-        next
-    }
-    if ($0 ~ /^BufferSend=/) {
-        print $0 "\n" # Mantém a linha original
-        print "AllowRoot=1\n"
-        next
-    }
-    print $0 "\n"
-}
-END {
-    print "UserParameter=pfsense.states.max,grep \"limit states\" /tmp/rules.limits | cut -f4 -d \" \"\n"
-    print "UserParameter=pfsense.states.current,grep \"current entries\" /tmp/pfctl_si_out | tr -s \" \" | cut -f4 -d \" \"\n"
-    print "UserParameter=pfsense.mbuf.current,netstat -m | grep \"mbuf clusters\" | cut -f1 -d \" \" | cut -d \"/\" -f1\n"
-    print "UserParameter=pfsense.mbuf.cache,netstat -m | grep \"mbuf clusters\" | cut -f1 -d \" \" | cut -d \"/\" -f2\n"
-    print "UserParameter=pfsense.mbuf.max,netstat -m | grep \"mbuf clusters\" | cut -f1 -d \" \" | cut -d \"/\" -f4\n"
-    print "UserParameter=pfsense.discovery[*],/usr/local/bin/php /root/scripts/pfsense_zbx.php discovery \$1\n"
-    print "UserParameter=pfsense.value[*],/usr/local/bin/php /root/scripts/pfsense_zbx.php \$1 \$2 \$3\n"
-}' $CONF_FILE > /tmp/zabbix_agentd.conf
+# 4. Aumentar o Timeout
+echo "Aumentando o Timeout do Zabbix Agent..."
+sed -i '' 's/^Timeout=.*/Timeout=5/' /usr/local/etc/zabbix6/zabbix_agentd.conf
 
-# Verifica se as alterações foram feitas
-if diff -q $CONF_FILE /tmp/zabbix_agentd.conf > /dev/null; then
-    echo "Nenhuma alteração necessária. O arquivo está atualizado."
-    rm /tmp/zabbix_agentd.conf
-else
-    mv /tmp/zabbix_agentd.conf $CONF_FILE
-    echo "Arquivo de configuração atualizado."
+# 5. Configurar cronjob para a versão do sistema
+echo "Configurando cronjob para a versão do sistema..."
+/usr/local/bin/php /root/scripts/pfsense_zbx.php sysversion_cron
+
+# 6. Verificar e instalar o pacote speedtest
+echo "Verificando o pacote speedtest..."
+PACKAGE_NAME=$(pkg search speedtest | grep -oE 'py[0-9]+-speedtest-cli')
+
+if [ -z "$PACKAGE_NAME" ]; then
+    echo "Pacote speedtest não encontrado."
+    exit 1
 fi
 
-# Altera o timeout para 30
-sed -i '' 's/^Timeout=.*/Timeout=30/' $CONF_FILE
+echo "Instalando o pacote $PACKAGE_NAME..."
+pkg install -y $PACKAGE_NAME
 
-# Reinicia o serviço do Zabbix Agent para aplicar as mudanças
-echo "Reiniciando o Zabbix Agent..."
-service zabbix_agentd restart
+# 7. Testar se o speedtest foi instalado corretamente
+echo "Testando a instalação do speedtest..."
+/usr/local/bin/speedtest
 
-# Verifica o status do Zabbix Agent
-echo "Verificando o status do Zabbix Agent..."
-service zabbix_agentd status
+if [ $? -ne 0 ]; then
+    echo "Erro ao executar speedtest. Baixando o script mais recente..."
+    curl -Lo /usr/local/lib/python3.8/site-packages/speedtest.py https://raw.githubusercontent.com/sivel/speedtest-cli/master/speedtest.py
+fi
 
-echo "Configuração do Zabbix Agent concluída!"
+# 8. Configurar cronjob para o Speedtest
+echo "Configurando cronjob para o Speedtest..."
+/usr/local/bin/php /root/scripts/pfsense_zbx.php speedtest_cron
+
+echo "Configuração do pfSense concluída."
