@@ -27,7 +27,15 @@ EOF
 
 # Adiciona o tunable virtio_console_load
 echo "Adicionando tunable virtio_console_load..."
-sysctl -w kern.virtio_console_load=1
+cat <<EOF >> /etc/sysctl.conf
+# Habilita o virtio_console_load
+virtio_console_load="YES"
+EOF
+
+# Carrega as novas configurações
+sysctl -f
 
 # Mensagem final
-echo "Configuração do qemu-guest-agent concluída. Por favor, reinicie o sistema para aplicar as mudanças."
+echo "Configuração do qemu-guest-agent concluída."
+echo "O tunable 'virtio_console_load' foi adicionado ao /etc/sysctl.conf."
+echo "Por favor, reinicie o sistema para aplicar as mudanças."
