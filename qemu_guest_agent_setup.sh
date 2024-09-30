@@ -18,9 +18,9 @@ cat <<EOF >> /usr/local/etc/shellcmd.conf
 service qemu-guest-agent start
 EOF
 
-# Edita o rc.conf.local para habilitar o qemu-guest-agent
-echo "Editando /etc/rc.conf.local para habilitar o qemu-guest-agent..."
-cat <<EOF >> /etc/rc.conf.local
+# Edita o rc.conf para habilitar o qemu-guest-agent
+echo "Editando /etc/rc.conf para habilitar o qemu-guest-agent..."
+cat <<EOF >> /etc/rc.conf
 qemu_guest_agent_enable="YES"
 qemu_guest_agent_flags="-d -v -l /var/log/qemu-ga.log"
 EOF
