@@ -17,21 +17,34 @@ awk -v ORS= -v timeout=30 '
         print "Timeout=" timeout "\n"
         next
     }
+    if ($0 ~ /^BufferSend=/) {
+        print $0 "\n" # Mantém a linha original
+        print "AllowRoot=1\n"
+        next
+    }
     print $0 "\n"
 }
 END {
-    print "\nAllowRoot=1\n"
-    print "UserParameter=pfsense.states.max,grep \"limit states\" /tmp/rules.limits | cut -f4 -d ' '\n"
-    print "UserParameter=pfsense.states.current,grep \"current entries\" /tmp/pfctl_si_out | tr -s ' ' | cut -f4 -d ' '\n"
-    print "UserParameter=pfsense.mbuf.current,netstat -m | grep \"mbuf clusters\" | cut -f1 -d ' ' | cut -d '/' -f1\n"
-    print "UserParameter=pfsense.mbuf.cache,netstat -m | grep \"mbuf clusters\" | cut -f1 -d ' ' | cut -d '/' -f2\n"
-    print "UserParameter=pfsense.mbuf.max,netstat -m | grep \"mbuf clusters\" | cut -f1 -d ' ' | cut -d '/' -f4\n"
-    print "UserParameter=pfsense.discovery[*],/usr/local/bin/php /root/scripts/pfsense_zbx.php discovery $1\n"
-    print "UserParameter=pfsense.value[*],/usr/local/bin/php /root/scripts/pfsense_zbx.php $1 $2 $3\n"
+    print "UserParameter=pfsense.states.max,grep \"limit states\" /tmp/rules.limits | cut -f4 -d \" \"\n"
+    print "UserParameter=pfsense.states.current,grep \"current entries\" /tmp/pfctl_si_out | tr -s \" \" | cut -f4 -d \" \"\n"
+    print "UserParameter=pfsense.mbuf.current,netstat -m | grep \"mbuf clusters\" | cut -f1 -d \" \" | cut -d \"/\" -f1\n"
+    print "UserParameter=pfsense.mbuf.cache,netstat -m | grep \"mbuf clusters\" | cut -f1 -d \" \" | cut -d \"/\" -f2\n"
+    print "UserParameter=pfsense.mbuf.max,netstat -m | grep \"mbuf clusters\" | cut -f1 -d \" \" | cut -d \"/\" -f4\n"
+    print "UserParameter=pfsense.discovery[*],/usr/local/bin/php /root/scripts/pfsense_zbx.php discovery \$1\n"
+    print "UserParameter=pfsense.value[*],/usr/local/bin/php /root/scripts/pfsense_zbx.php \$1 \$2 \$3\n"
 }' $CONF_FILE > /tmp/zabbix_agentd.conf
 
-# Sobrescreve o arquivo de configuração original
-mv /tmp/zabbix_agentd.conf $CONF_FILE
+# Verifica se as alterações foram feitas
+if diff -q $CONF_FILE /tmp/zabbix_agentd.conf > /dev/null; then
+    echo "Nenhuma alteração necessária. O arquivo está atualizado."
+    rm /tmp/zabbix_agentd.conf
+else
+    mv /tmp/zabbix_agentd.conf $CONF_FILE
+    echo "Arquivo de configuração atualizado."
+fi
+
+# Altera o timeout para 30
+sed -i '' 's/^Timeout=.*/Timeout=30/' $CONF_FILE
 
 # Reinicia o serviço do Zabbix Agent para aplicar as mudanças
 echo "Reiniciando o Zabbix Agent..."
