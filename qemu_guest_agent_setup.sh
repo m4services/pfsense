@@ -20,3 +20,6 @@ echo 'virtio_console_load="YES"' >> /boot/loader.conf
 echo "Configuração do qemu-guest-agent concluída."
 echo "O tunable 'virtio_console_load' foi adicionado ao /boot/loader.conf."
 echo "Por favor, reinicie o sistema para aplicar as mudanças."
+
+# Inicia o servico
+service qemu-guest-agent start
